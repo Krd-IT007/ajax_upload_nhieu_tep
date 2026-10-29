@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Local Drive - Hệ Thống Tải Tệp & Nén Ảnh (Milk Tea Theme)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+  
+  /* --- TÔNG MÀU NỀN TRÀ SỮA (CREAMY BEIGE) --- */
+  body { 
+    background-color: #f9f5f0; 
+    color: #382a25; 
+    display: flex; 
+    flex-direction: column; 
+    min-height: 100vh;
+  }
+
+  /* --- 1. HEADER TRÀ SỮA --- */
+  .app-header {
+    background: #ffffff;
+    border-bottom: 1px solid #ebdcd0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(115, 71, 55, 0.05);
+  }
+  
+  .header-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+
+  .header-brand .logo-icon {
+    font-size: 28px;
+    line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(140, 92, 74, 0.2));
+  }
+
+  .header-brand .logo-text {
+    font-size: 20px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #7c4d3a, #c48b5e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .header-nav {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .nav-link {
+    text-decoration: none;
+    color: #806d64;
+    font-size: 14px;
+    font-weight: 600;
+    transition: color 0.2s;
+  }
+
+  .nav-link:hover, .nav-link.active { color: #8c5c4a; }
+
+  .user-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f5ece5;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #594238;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #8c5c4a;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(140, 92, 74, 0.2);
+  }
+
+  /* --- BỐ CỤC CHÍNH 2 CỘT (MAIN + SIDEBAR) --- */
+  .app-main {
+    flex: 1;
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  .layout-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 24px;
+    align-items: start;
+  }
+
+  @media (max-width: 900px) {
+    .layout-grid { grid-template-columns: 1fr; }
+  }
+
+  .left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* --- ANIMATIONS --- */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.92); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes imageReveal {
+    from { opacity: 0; filter: blur(6px); }
+    to { opacity: 1; filter: blur(0); }
+  }
+
+  /* --- CARD STYLES --- */
+  .card { 
+    background: #ffffff; 
+    width: 100%; 
+    padding: 24px; 
+    border-radius: 20px; 
+    box-shadow: 0 10px 25px -5px rgba(100, 60, 30, 0.05); 
+    animation: fadeInUp 0.5s ease-out forwards;
+    border: 1px solid #f2e6dc;
+  }
+  .card h3 { font-size: 17px; font-weight: 700; margin-bottom: 16px; color: #382a25; display: flex; align-items: center; gap: 8px; }
+
+  /* Buttons & Actions (Màu Nâu Trà Sữa) */
+  .upload-actions { display: flex; gap: 12px; }
+  .btn { flex: 1; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.25s ease; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  
+  .btn-select { background-color: #faf4ed; color: #8c5c4a; border: 2px dashed #d9bead; }
+  .btn-select:hover { background-color: #f3e8db; border-color: #8c5c4a; transform: translateY(-2px); }
+  
+  .btn-upload { background-color: #8c5c4a; color: white; box-shadow: 0 4px 12px rgba(140, 92, 74, 0.25); }
+  .btn-upload:hover { background-color: #734737; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(140, 92, 74, 0.35); }
+
+  /* Preview Card */
+  .preview-card { display: none; }
+  
+  .main-preview-container { 
+    position: relative; width: 100%; height: 380px; 
+    background: radial-gradient(circle, #faf5ef 0%, #ede0d4 100%);
+    border-radius: 14px; overflow: hidden; margin-bottom: 20px; 
+    display: flex; align-items: center; justify-content: center;
+  }
+  .main-preview-container img { 
+    max-width: 100%; max-height: 100%; 
+    object-fit: contain; 
+    animation: imageReveal 0.4s ease-out forwards;
+  }
+  .main-preview-container .file-icon { 
+    width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; 
+    background: #f2e4d8; color: #8c5c4a; font-size: 64px; font-weight: bold;
+  }
+  
+  .image-info-overlay {
+    position: absolute; bottom: 0; left: 0; width: 100%;
+    padding: 36px 20px 16px;
+    background: linear-gradient(to top, rgba(45,28,22,0.88) 0%, transparent 100%);
+    color: #f9f5f0;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    pointer-events: none;
+  }
+  .info-name { font-weight: 600; font-size: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 75%; }
+  .info-size { font-size: 13px; opacity: 0.95; background: rgba(255,255,255,0.22); padding: 3px 8px; border-radius: 16px; backdrop-filter: blur(4px); }
+
+  .btn-remove-main { 
+    position: absolute; top: 14px; right: 14px; 
+    background: rgba(255, 255, 255, 0.9); color: #c0392b; border: none; 
+    width: 34px; height: 34px; border-radius: 50%; font-size: 18px; 
+    cursor: pointer; display: flex; align-items: center; justify-content: center; 
+    transition: all 0.2s; z-index: 10;
+  }
+  .btn-remove-main:hover { transform: scale(1.1) rotate(90deg); background: #c0392b; color: white; }
+
+  /* Thumbnails Grid */
+  .thumbnail-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+  .thumb-box { 
+    width: 70px; height: 70px; border-radius: 10px; cursor: pointer; overflow: hidden; 
+    border: 3px solid transparent; opacity: 0.65; transition: all 0.2s ease; 
+    animation: scaleIn 0.3s ease-out forwards;
+  }
+  .thumb-box img { width: 100%; height: 100%; object-fit: cover; }
+  .thumb-box .doc-icon { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #f2e4d8; color: #8c5c4a; font-size: 20px; font-weight: bold; }
+  
+  .thumb-box:hover { opacity: 1; transform: translateY(-2px); }
+  .thumb-box.active { border-color: #8c5c4a; opacity: 1; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(140, 92, 74, 0.3); }
+
+  .add-more-box { 
+    width: 70px; height: 70px; border: 2px dashed #d9bead; border-radius: 10px; 
+    display: flex; align-items: center; justify-content: center; 
+    color: #a68f78; cursor: pointer; background: #faf4ed; transition: all 0.2s; 
+  }
+  .add-more-box:hover { border-color: #8c5c4a; color: #8c5c4a; background: #f3e8db; }
+
+  /* Progress & Status */
+  .progress-container { margin-top: 20px; display: none; }
+  .progress-header { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #6d5b52; }
+  .progress-bar-bg { width: 100%; height: 8px; background-color: #ebdcd0; border-radius: 99px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #a67c52, #6e473b); border-radius: 99px; transition: width 0.3s ease; }
+  #thongBao { margin-top: 16px; font-size: 14px; font-weight: 600; text-align: center; border-radius: 10px; padding: 12px; display: none; }
+  .success { background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+  .error { background-color: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+  /* --- 3. CARD THÔNG TIN BÊN TAY PHẢI --- */
+  .info-sidebar-card { position: sticky; top: 80px; }
+
+  .empty-info-state { text-align: center; padding: 36px 12px; color: #a68f78; }
+  .empty-info-icon { font-size: 42px; margin-bottom: 10px; opacity: 0.7; }
+
+  .info-list { display: flex; flex-direction: column; gap: 16px; }
+
+  .info-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f5ece5;
+  }
+  .info-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+  .info-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #806d64;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .info-value { font-size: 14px; font-weight: 600; color: #382a25; word-break: break-all; }
+
+  .badge-compression {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    width: fit-content;
+    margin-top: 2px;
+  }
+  .badge-compressed { background-color: #f3e8db; color: #7c4d3a; border: 1px solid #d9bead; }
+  .badge-original { background-color: #f5ece5; color: #6d5b52; border: 1px solid #e8decb; }
+
+  .saving-tag { font-size: 12px; color: #8c5c4a; font-weight: 600; margin-top: 2px; }
+
+  /* --- 4. FOOTER --- */
+  .app-footer {
+    background: #ffffff;
+    border-top: 1px solid #ebdcd0;
+    padding: 24px 0;
+    margin-top: auto;
+  }
+
+  .footer-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    font-size: 13px;
+    color: #806d64;
+  }
+
+  .footer-links { display: flex; gap: 16px; }
+  .footer-links a { color: #806d64; text-decoration: none; transition: color 0.2s; }
+  .footer-links a:hover { color: #8c5c4a; }
+</style>
+</head>
+<body>
+
+<!-- HEADER TRÀ SỮA -->
+<header class="app-header">
+  <div class="header-container">
+    <a href="#" class="header-brand">
+      <span class="logo-icon">☁️</span>
+      <span class="logo-text">Local Drive</span>
+    </a>
+    
+    <nav class="header-nav">
+      <a href="#" class="nav-link active">Tải Lên</a>
+      <a href="#" class="nav-link">Kho Lưu Trữ</a>
+    </nav>
+
+    <div class="user-badge">
+      <span class="status-dot"></span>
+      <span>Localhost Server</span>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN CONTENT LAYOUT (2 CỘT) -->
+<main class="app-main">
+  <div class="layout-grid">
+    
+    <!-- CỘT TRÁI (MAIN ACTIONS & PREVIEW) -->
+    <div class="left-column">
+      
+      <!-- Card 1: Chọn Tập Tin -->
+      <div class="card">
+        <h3><span style="font-size: 20px;">🧋</span> Chọn Tập Tin Cần Đăng</h3>
+        <div class="upload-actions">
+          <button class="btn btn-select" onclick="document.getElementById('fileInput').click()">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"></path></svg>
+            Chọn Tập Tin
+          </button>
+          <button class="btn btn-upload" onclick="uploadFiles()">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+            Tải Lên Server
+          </button>
+        </div>
+        <input type="file" id="fileInput" multiple hidden onchange="xuLyChonFiles(this.files)">
+
+        <div class="progress-container" id="progressContainer">
+          <div class="progress-header">
+            <span id="progressStatusText">Đang truyền dữ liệu...</span>
+            <span id="progressPercent">0%</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progressBarFill"></div>
+          </div>
+        </div>
+        <div id="thongBao"></div>
+      </div>
+
+      <!-- Card 2: Xem Trước Trực Quan -->
+      <div class="card preview-card" id="previewCard">
+        <h3><span style="font-size: 20px;">👁️</span> Xem Trước Tập Tin</h3>
+        
+        <div class="main-preview-container">
+          <div id="mainMediaRender" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"></div>
+          <button class="btn-remove-main" onclick="xoaAnhDangXem()" title="Bỏ chọn tập tin này">&times;</button>
+        </div>
+
+        <div class="thumbnail-grid" id="thumbnailGrid">
+          <div class="add-more-box" onclick="document.getElementById('fileInput').click()" title="Chọn thêm tập tin">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"></path></svg>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CỘT PHẢI: CARD THÔNG TIN TRẠNG THÁI NÉN -->
+    <aside class="right-column">
+      <div class="card info-sidebar-card">
+        <h3><span style="font-size: 20px;">📊</span> Chi Tiết & Trạng Thái</h3>
+        
+        <div id="infoCardContent">
+          <div class="empty-info-state">
+            <div class="empty-info-icon">📄</div>
+            <p>Chưa chọn tập tin nào để hiển thị thông tin.</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+</main>
+
+<!-- FOOTER -->
+<footer class="app-footer">
+  <div class="footer-container">
+    <div>
+      © 2026 <b>Local Drive (Milk Tea Edition)</b>. Hệ thống tải tệp AJAX PHP thời gian thực.
+    </div>
+    <div class="footer-links">
+      <a href="#">Trợ giúp</a>
+      <a href="#">Cấu hình php.ini</a>
+      <a href="#">Bảo mật</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+let filesToUpload = [];
+let activeIndex = 0; 
+
+const previewCard = document.getElementById('previewCard');
+const mainMediaRender = document.getElementById('mainMediaRender');
+const thumbnailGrid = document.getElementById('thumbnailGrid');
+const fileInput = document.getElementById('fileInput');
+const infoCardContent = document.getElementById('infoCardContent');
+
+// 1. NÉN ẢNH CANVAS
+function compressImage(file, quality = 0.7, maxWidth = 1200) {
+  return new Promise((resolve) => {
+    if (!file.type.startsWith('image/')) {
+      resolve({
+        file: file,
+        originalSize: file.size,
+        compressedSize: file.size,
+        isCompressed: false,
+        isImage: false
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (e) => {
+      const img = new Image();
+      img.src = e.target.result;
+      img.onload = () => {
+        const origW = img.width;
+        const origH = img.height;
+        let width = origW;
+        let height = origH;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob((blob) => {
+          if (blob && blob.size < file.size) {
+            const compressedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            });
+            resolve({
+              file: compressedFile,
+              originalSize: file.size,
+              compressedSize: blob.size,
+              isCompressed: true,
+              isImage: true,
+              origW, origH,
+              newW: width, newH: height
+            });
+          } else {
+            resolve({
+              file: file,
+              originalSize: file.size,
+              compressedSize: file.size,
+              isCompressed: false,
+              isImage: true,
+              origW, origH,
+              newW: origW, newH: origH
+            });
+          }
+        }, 'image/jpeg', quality);
+      };
+    };
+  });
+}
+
+// 2. XỬ LÝ CHỌN VÀ NÉN FILE
+async function xuLyChonFiles(selectedFiles) {
+  if (!selectedFiles.length) return;
+  
+  document.getElementById('progressContainer').style.display = 'none';
+  document.getElementById('thongBao').style.display = 'none';
+
+  for (let file of selectedFiles) {
+    const itemData = await compressImage(file);
+    filesToUpload.push({
+      ...itemData,
+      url: URL.createObjectURL(itemData.file)
+    });
+  }
+  
+  activeIndex = filesToUpload.length - 1; 
+  capNhatGiaoDienPreview();
+  fileInput.value = ''; 
+}
+
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+// 3. CẬP NHẬT GIAO DIỆN & CARD THÔNG TIN
+function capNhatGiaoDienPreview() {
+  if (filesToUpload.length === 0) {
+    previewCard.style.display = 'none';
+    infoCardContent.innerHTML = `
+      <div class="empty-info-state">
+        <div class="empty-info-icon">📄</div>
+        <p>Chưa chọn tập tin nào để hiển thị thông tin.</p>
+      </div>
+    `;
+    return;
+  }
+  
+  previewCard.style.display = 'block';
+
+  const activeItem = filesToUpload[activeIndex];
+  const formattedSize = formatBytes(activeItem.compressedSize);
+  const fileName = activeItem.file.name;
+
+  if (activeItem.isImage) {
+    mainMediaRender.innerHTML = `
+      <img src="${activeItem.url}" alt="Bản xem trước">
+      <div class="image-info-overlay">
+        <div class="info-name" title="${fileName}">${fileName}</div>
+        <div class="info-size">${formattedSize}</div>
+      </div>
+    `;
+  } else {
+    mainMediaRender.innerHTML = `
+      <div class="file-icon">${fileName.split('.').pop().toUpperCase()}</div>
+      <div class="image-info-overlay">
+        <div class="info-name" title="${fileName}">${fileName}</div>
+        <div class="info-size">${formattedSize}</div>
+      </div>
+    `;
+  }
+
+  const existingThumbs = thumbnailGrid.querySelectorAll('.thumb-box');
+  existingThumbs.forEach(el => el.remove());
+
+  const addMoreBox = document.querySelector('.add-more-box');
+
+  filesToUpload.forEach((item, index) => {
+    const div = document.createElement('div');
+    div.className = `thumb-box ${index === activeIndex ? 'active' : ''}`;
+    div.onclick = () => chonAnhXemThu(index); 
+
+    if (item.isImage) {
+      div.innerHTML = `<img src="${item.url}" alt="thumb">`;
+    } else {
+      let ext = item.file.name.split('.').pop().substring(0, 3).toUpperCase();
+      div.innerHTML = `<div class="doc-icon">${ext}</div>`;
+    }
+
+    thumbnailGrid.insertBefore(div, addMoreBox);
+  });
+
+  renderRightSidebarInfo(activeItem);
+}
+
+// 4. RENDER CỘT THÔNG TIN SIDEBAR PHẢI
+function renderRightSidebarInfo(item) {
+  let compressionBadgeHTML = '';
+  let sizeComparisonHTML = '';
+  let dimensionHTML = '';
+
+  if (item.isCompressed) {
+    const savedBytes = item.originalSize - item.compressedSize;
+    const savedPercent = Math.round((savedBytes / item.originalSize) * 100);
+
+    compressionBadgeHTML = `
+      <div class="badge-compression badge-compressed">
+        ⚡ Đã Nén Client-side
+      </div>
+      <div class="saving-tag">↓ Tiết kiệm ${savedPercent}% dung lượng (${formatBytes(savedBytes)})</div>
+    `;
+
+    sizeComparisonHTML = `
+      <span style="text-decoration: line-through; color: #a68f78;">${formatBytes(item.originalSize)}</span>
+      <span style="color: #8c5c4a; font-weight: 700; margin-left: 6px;">${formatBytes(item.compressedSize)}</span>
+    `;
+
+    dimensionHTML = `
+      <div class="info-row">
+        <div class="info-label">Độ phân giải</div>
+        <div class="info-value">${item.origW}×${item.origH}px ➔ <b>${item.newW}×${item.newH}px</b></div>
+      </div>
+    `;
+  } else {
+    compressionBadgeHTML = `
+      <div class="badge-compression badge-original">
+        📄 File Gốc / Chưa Nén
+      </div>
+    `;
+
+    sizeComparisonHTML = `<span>${formatBytes(item.compressedSize)}</span>`;
+
+    if (item.isImage) {
+      dimensionHTML = `
+        <div class="info-row">
+          <div class="info-label">Độ phân giải</div>
+          <div class="info-value">${item.origW} × ${item.origH} px</div>
+        </div>
+      `;
+    }
+  }
+
+  infoCardContent.innerHTML = `
+    <div class="info-list">
+      <div class="info-row">
+        <div class="info-label">Trạng Thái Nén</div>
+        <div>${compressionBadgeHTML}</div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-label">Tên Tập Tin</div>
+        <div class="info-value" title="${item.file.name}">${item.file.name}</div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-label">Dung Lượng Tệp</div>
+        <div class="info-value">${sizeComparisonHTML}</div>
+      </div>
+
+      ${dimensionHTML}
+
+      <div class="info-row">
+        <div class="info-label">Định Dạng</div>
+        <div class="info-value">${item.file.type || 'Tập tin hệ thống'}</div>
+      </div>
+    </div>
+  `;
+}
+
+function chonAnhXemThu(index) {
+  if(activeIndex === index) return;
+  activeIndex = index;
+  capNhatGiaoDienPreview();
+}
+
+function xoaAnhDangXem() {
+  filesToUpload.splice(activeIndex, 1);
+  if (activeIndex >= filesToUpload.length) {
+    activeIndex = filesToUpload.length - 1;
+  }
+  if (activeIndex < 0) activeIndex = 0;
+  
+  capNhatGiaoDienPreview();
+}
+
+function uploadFiles() {
+  if (filesToUpload.length === 0) return;
+
+  const formData = new FormData();
+  filesToUpload.forEach(item => formData.append('files[]', item.file));
+
+  const xhr = new XMLHttpRequest();
+  const progressContainer = document.getElementById('progressContainer');
+  const progressBarFill = document.getElementById('progressBarFill');
+  const progressPercent = document.getElementById('progressPercent');
+  const thongBao = document.getElementById('thongBao');
+
+  progressContainer.style.display = 'block';
+  progressBarFill.style.width = '0%';
+  thongBao.style.display = 'none';
+
+  xhr.upload.addEventListener('progress', e => {
+    if (e.lengthComputable) {
+      const percent = Math.round((e.loaded / e.total) * 100);
+      progressBarFill.style.width = percent + '%';
+      progressPercent.innerText = percent + '%';
+    }
+  });
+
+  xhr.onload = () => {
+    thongBao.style.display = 'block';
+    if (xhr.status === 200) {
+      thongBao.innerHTML = '✨ Tải lên Local Drive thành công!';
+      thongBao.className = 'success';
+      filesToUpload = []; 
+      capNhatGiaoDienPreview();
+    } else {
+      thongBao.innerText = '⚠️ Xảy ra lỗi trong quá trình đăng tải!';
+      thongBao.className = 'error';
+    }
+  };
+  
+  xhr.open('POST', 'upload.php', true);
+  xhr.send(formData);
+}
+</script>
+
+</body>
+</html>
